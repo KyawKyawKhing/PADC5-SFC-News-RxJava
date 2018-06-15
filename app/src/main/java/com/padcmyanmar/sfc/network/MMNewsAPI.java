@@ -2,6 +2,7 @@ package com.padcmyanmar.sfc.network;
 
 import com.padcmyanmar.sfc.network.reponses.GetNewsResponse;
 
+import io.reactivex.Observable;
 import retrofit2.Call;
 import retrofit2.http.Field;
 import retrofit2.http.FormUrlEncoded;
@@ -15,7 +16,13 @@ public interface MMNewsAPI {
 
     @FormUrlEncoded
     @POST("v1/getMMNews.php")
-    Call<GetNewsResponse> loadMMNews(
+    Call<GetNewsResponse> loadMMNewss(
+            @Field("page") int pageIndex,
+            @Field("access_token") String accessToken);
+
+    @FormUrlEncoded
+    @POST("v1/getMMNews.php")
+    Observable<GetNewsResponse> loadMMNews(
             @Field("page") int pageIndex,
             @Field("access_token") String accessToken);
 }

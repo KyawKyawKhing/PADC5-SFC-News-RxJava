@@ -18,18 +18,29 @@ import com.padcmyanmar.sfc.adapters.NewsAdapter;
 import com.padcmyanmar.sfc.components.EmptyViewPod;
 import com.padcmyanmar.sfc.components.SmartRecyclerView;
 import com.padcmyanmar.sfc.components.SmartScrollListener;
+import com.padcmyanmar.sfc.data.models.NewsModel;
 import com.padcmyanmar.sfc.delegates.NewsItemDelegate;
 import com.padcmyanmar.sfc.events.RestApiEvents;
 import com.padcmyanmar.sfc.events.TapNewsEvent;
+import com.padcmyanmar.sfc.network.reponses.GetNewsResponse;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
 import java.util.Date;
+import java.util.concurrent.Callable;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import io.reactivex.Observer;
+import io.reactivex.Scheduler;
+import io.reactivex.Single;
+import io.reactivex.SingleObserver;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.schedulers.Schedulers;
+import io.reactivex.subjects.PublishSubject;
 
 public class NewsListActivity extends BaseActivity
         implements NewsItemDelegate {
@@ -46,6 +57,7 @@ public class NewsListActivity extends BaseActivity
     private SmartScrollListener mSmartScrollListener;
 
     private NewsAdapter mNewsAdapter;
+    private PublishSubject<GetNewsResponse> publishSubject;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -91,6 +103,76 @@ public class NewsListActivity extends BaseActivity
         });
 
         rvNews.addOnScrollListener(mSmartScrollListener);
+
+        publishSubject = PublishSubject.create();
+        NewsModel.getInstance().startLoadingMMNews(publishSubject);
+        publishSubject.subscribe(new Observer<GetNewsResponse>() {
+            @Override
+            public void onSubscribe(Disposable d) {
+
+            }
+
+            @Override
+            public void onNext(GetNewsResponse value) {
+                mNewsAdapter.appendNewData(value.getNewsList());
+            }
+
+            @Override
+            public void onError(Throwable e) {
+                Snackbar.make(rvNews, e.getMessage(), Snackbar.LENGTH_INDEFINITE).show();
+            }
+
+            @Override
+            public void onComplete() {
+
+            }
+        });
+        getPrimeNumbers();
+    }
+
+    private void getPrimeNumbers() {
+        Single<Integer[]> single = Single.fromCallable(new Callable<Integer[]>() {
+            @Override
+            public Integer[] call() throws Exception {
+                return calculatePrimeNumbers("str1,str2,str3");
+            }
+        });
+        single.subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new SingleObserver<Integer[]>() {
+                    @Override
+                    public void onSubscribe(Disposable d) {
+
+                    }
+
+                    @Override
+                    public void onSuccess(Integer[] values) {
+                        for (Integer value : values) {
+                            Log.d("result value ", value + "");
+                        }
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+
+                    }
+                });
+    }
+
+    private Integer[] calculatePrimeNumbers(String str) {
+        String[] strings = str.split(",");
+        int count = strings.length;
+        int index = 0;
+        Integer[] results = new Integer[count];
+        for (int i = 2; i < 1000; i++) {
+            if ((i % 2) != 0 && (i % 3) != 0) {
+                results[index] = i;
+                index++;
+                if (index==count)
+                    break;
+            }
+        }
+        return results;
     }
 
     @Override
@@ -162,12 +244,11 @@ public class NewsListActivity extends BaseActivity
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onNewsDataLoaded(RestApiEvents.NewsDataLoadedEvent event) {
-        mNewsAdapter.appendNewData(event.getLoadNews());
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onErrorInvokingAPI(RestApiEvents.ErrorInvokingAPIEvent event) {
-        Snackbar.make(rvNews, event.getErrorMsg(), Snackbar.LENGTH_INDEFINITE).show();
+//        Snackbar.make(rvNews, event.getErrorMsg(), Snackbar.LENGTH_INDEFINITE).show();
     }
 
 }
