@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.v7.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="@dimen/margin_small"
+    android:elevation="@dimen/margin_medium">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="@dimen/margin_medium">
+
+        <ImageView
+            android:id="@+id/iv_publication_logo"
+            android:layout_width="30dp"
+            android:layout_height="25dp"
+            android:layout_alignParentStart="true"
+            android:src="@drawable/img_publication_logo_placeholder" />
+
+        <TextView
+            android:id="@+id/tv_publication_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toEndOf="@id/iv_publication_logo"
+            android:text="Eleven Media"
+            android:textColor="@color/primary_text"
+            android:textSize="@dimen/text_regular_2x" />
+
+        <org.mmtextview.components.MMTextView
+            android:id="@+id/tv_brief_news"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/iv_publication_logo"
+            android:layout_toStartOf="@+id/iv_news_hero_image"
+            android:ellipsize="end"
+            android:lineSpacingMultiplier="1.3"
+            android:maxLines="3"
+            android:text="@string/dummy_news"
+            android:textColor="@color/primary_text" />
+
+        <TextView
+            android:id="@+id/tv_published_date"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/tv_brief_news"
+            android:layout_marginTop="@dimen/margin_small"
+            android:text="Jan 01 - 6:30AM"
+            android:textColor="@color/secondary_text"
+            android:textSize="@dimen/text_regular" />
+
+        <ImageView
+            android:id="@+id/iv_news_hero_image"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:layout_alignParentEnd="true"
+            android:layout_margin="@dimen/margin_medium"
+            android:scaleType="fitXY"
+            android:src="@drawable/img_news_placeholder" />
+
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_alignParentEnd="true"
+            android:layout_below="@id/iv_news_hero_image"
+            android:src="@drawable/ic_more_vert_white_24dp" />
+    </RelativeLayout>
+</android.support.v7.widget.CardView>

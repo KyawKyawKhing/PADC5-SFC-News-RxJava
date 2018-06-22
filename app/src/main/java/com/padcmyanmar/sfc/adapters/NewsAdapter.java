@@ -25,7 +25,7 @@ public class NewsAdapter extends BaseRecyclerAdapter<NewsViewHolder, NewsVO> {
 
     @Override
     public NewsViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        View newsItemView = mLayoutInflator.inflate(R.layout.view_item_news, parent, false);
+        View newsItemView = mLayoutInflator.inflate(R.layout.view_item_google_news, parent, false);
         return new NewsViewHolder(newsItemView, mNewsItemDelegate);
     }
 }

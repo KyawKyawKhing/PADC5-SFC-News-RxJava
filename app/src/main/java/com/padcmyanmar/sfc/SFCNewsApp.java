@@ -20,33 +20,10 @@ import retrofit2.converter.gson.GsonConverterFactory;
 public class SFCNewsApp extends Application {
 
     public static final String LOG_TAG = "SFCNewsApp";
-    static MMNewsAPI mmNewsAPI;
-
 
     @Override
     public void onCreate() {
         super.onCreate();
-        initMMNewsApi();
     }
 
-    public static MMNewsAPI getMmNewsAPI() {
-        return mmNewsAPI;
-    }
-
-    private void initMMNewsApi() {
-        OkHttpClient okHttpClient = new OkHttpClient.Builder()
-                .connectTimeout(60, TimeUnit.SECONDS)
-                .writeTimeout(60, TimeUnit.SECONDS)
-                .readTimeout(60, TimeUnit.SECONDS)
-                .build();
-
-        Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl("http://padcmyanmar.com/padc-3/mm-news/apis/")
-                .addConverterFactory(GsonConverterFactory.create(new Gson()))
-                .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
-                .client(okHttpClient)
-                .build();
-
-        mmNewsAPI = retrofit.create(MMNewsAPI.class);
-    }
 }

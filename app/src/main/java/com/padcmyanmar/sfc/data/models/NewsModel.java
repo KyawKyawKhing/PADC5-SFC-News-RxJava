@@ -1,8 +1,13 @@
 package com.padcmyanmar.sfc.data.models;
 
+import android.media.audiofx.BassBoost;
+
+import com.google.gson.Gson;
+import com.jakewharton.retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
 import com.padcmyanmar.sfc.SFCNewsApp;
 import com.padcmyanmar.sfc.data.vo.NewsVO;
 import com.padcmyanmar.sfc.events.RestApiEvents;
+import com.padcmyanmar.sfc.network.MMNewsAPI;
 import com.padcmyanmar.sfc.network.MMNewsDataAgent;
 import com.padcmyanmar.sfc.network.MMNewsDataAgentImpl;
 import com.padcmyanmar.sfc.network.reponses.GetNewsResponse;
@@ -13,7 +18,10 @@ import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import io.reactivex.Observable;
 import io.reactivex.Observer;
@@ -22,21 +30,24 @@ import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
 import io.reactivex.subjects.PublishSubject;
+import okhttp3.OkHttpClient;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
 
 /**
  * Created by aung on 12/3/17.
  */
 
-public class NewsModel {
+public class NewsModel extends BaseModel {
 
     private static NewsModel objInstance;
-
-    private List<NewsVO> mNews;
+    Observable<GetNewsResponse> responseObservable;
     private int mmNewsPageIndex = 1;
+    private Map<String, NewsVO> newsVOMap;
 
     private NewsModel() {
-        EventBus.getDefault().register(this);
-        mNews = new ArrayList<>();
+        newsVOMap = new HashMap<>();
+        responseObservable = mmNewsAPI.loadMMNews(mmNewsPageIndex, AppConstants.ACCESS_TOKEN);
     }
 
     public static NewsModel getInstance() {
@@ -47,30 +58,24 @@ public class NewsModel {
     }
 
     public void startLoadingMMNews(final PublishSubject<GetNewsResponse> publishSubject) {
-//        MMNewsDataAgentImpl.getInstance().loadMMNews(AppConstants.ACCESS_TOKEN, mmNewsPageIndex);
-        Observable<GetNewsResponse> responseObservable = SFCNewsApp.getMmNewsAPI().loadMMNews(mmNewsPageIndex, AppConstants.ACCESS_TOKEN);
         responseObservable.
                 subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Observer<GetNewsResponse>() {
                     @Override
                     public void onSubscribe(Disposable d) {
-
                     }
 
                     @Override
                     public void onNext(GetNewsResponse value) {
-//                        RestApiEvents.NewsDataLoadedEvent newsDataLoadedEvent = new RestApiEvents.NewsDataLoadedEvent(
-//                                value.getPageNo(), value.getNewsList());
-//                        EventBus.getDefault().post(newsDataLoadedEvent);
+                        for (NewsVO newsVO : value.getNewsList()) {
+                            newsVOMap.put(newsVO.getNewsId(), newsVO);
+                        }
                         publishSubject.onNext(value);
                     }
 
                     @Override
                     public void onError(Throwable e) {
-//                        RestApiEvents.ErrorInvokingAPIEvent errorEvent
-//                                = new RestApiEvents.ErrorInvokingAPIEvent("No data could be loaded for now. Pls try again later.");
-//                        EventBus.getDefault().post(errorEvent);
                     }
 
                     @Override
@@ -80,9 +85,7 @@ public class NewsModel {
                 });
     }
 
-    @Subscribe(threadMode = ThreadMode.BACKGROUND)
-    public void onNewsDataLoaded(RestApiEvents.NewsDataLoadedEvent event) {
-        mNews.addAll(event.getLoadNews());
-        mmNewsPageIndex = event.getLoadedPageIndex() + 1;
+    public NewsVO getNewsById(String newsId) {
+        return newsVOMap.get(newsId);
     }
 }

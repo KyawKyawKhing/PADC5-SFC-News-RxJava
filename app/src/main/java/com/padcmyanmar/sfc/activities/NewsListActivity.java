@@ -19,9 +19,12 @@ import com.padcmyanmar.sfc.components.EmptyViewPod;
 import com.padcmyanmar.sfc.components.SmartRecyclerView;
 import com.padcmyanmar.sfc.components.SmartScrollListener;
 import com.padcmyanmar.sfc.data.models.NewsModel;
+import com.padcmyanmar.sfc.data.vo.NewsVO;
 import com.padcmyanmar.sfc.delegates.NewsItemDelegate;
 import com.padcmyanmar.sfc.events.RestApiEvents;
 import com.padcmyanmar.sfc.events.TapNewsEvent;
+import com.padcmyanmar.sfc.mvp.presenters.NewsListPresenter;
+import com.padcmyanmar.sfc.mvp.views.NewsListView;
 import com.padcmyanmar.sfc.network.reponses.GetNewsResponse;
 
 import org.greenrobot.eventbus.EventBus;
@@ -29,6 +32,7 @@ import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
 import java.util.Date;
+import java.util.List;
 import java.util.concurrent.Callable;
 
 import butterknife.BindView;
@@ -43,7 +47,7 @@ import io.reactivex.schedulers.Schedulers;
 import io.reactivex.subjects.PublishSubject;
 
 public class NewsListActivity extends BaseActivity
-        implements NewsItemDelegate {
+        implements NewsListView {
 
     @BindView(R.id.drawer_layout)
     DrawerLayout drawerLayout;
@@ -57,7 +61,7 @@ public class NewsListActivity extends BaseActivity
     private SmartScrollListener mSmartScrollListener;
 
     private NewsAdapter mNewsAdapter;
-    private PublishSubject<GetNewsResponse> publishSubject;
+    NewsListPresenter mPresenter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,6 +69,8 @@ public class NewsListActivity extends BaseActivity
         setContentView(R.layout.activity_news_list);
         ButterKnife.bind(this, this);
 
+        mPresenter = new NewsListPresenter(this);
+        mPresenter.onCreate();
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
@@ -91,7 +97,7 @@ public class NewsListActivity extends BaseActivity
 
         rvNews.setEmptyView(vpEmptyNews);
         rvNews.setLayoutManager(new LinearLayoutManager(getApplicationContext(), LinearLayoutManager.VERTICAL, false));
-        mNewsAdapter = new NewsAdapter(getApplicationContext(), this);
+        mNewsAdapter = new NewsAdapter(getApplicationContext(), mPresenter);
         rvNews.setAdapter(mNewsAdapter);
 
         mSmartScrollListener = new SmartScrollListener(new SmartScrollListener.OnSmartScrollListener() {
@@ -104,76 +110,8 @@ public class NewsListActivity extends BaseActivity
 
         rvNews.addOnScrollListener(mSmartScrollListener);
 
-        publishSubject = PublishSubject.create();
-        NewsModel.getInstance().startLoadingMMNews(publishSubject);
-        publishSubject.subscribe(new Observer<GetNewsResponse>() {
-            @Override
-            public void onSubscribe(Disposable d) {
-
-            }
-
-            @Override
-            public void onNext(GetNewsResponse value) {
-                mNewsAdapter.appendNewData(value.getNewsList());
-            }
-
-            @Override
-            public void onError(Throwable e) {
-                Snackbar.make(rvNews, e.getMessage(), Snackbar.LENGTH_INDEFINITE).show();
-            }
-
-            @Override
-            public void onComplete() {
-
-            }
-        });
-        getPrimeNumbers();
     }
 
-    private void getPrimeNumbers() {
-        Single<Integer[]> single = Single.fromCallable(new Callable<Integer[]>() {
-            @Override
-            public Integer[] call() throws Exception {
-                return calculatePrimeNumbers("str1,str2,str3");
-            }
-        });
-        single.subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new SingleObserver<Integer[]>() {
-                    @Override
-                    public void onSubscribe(Disposable d) {
-
-                    }
-
-                    @Override
-                    public void onSuccess(Integer[] values) {
-                        for (Integer value : values) {
-                            Log.d("result value ", value + "");
-                        }
-                    }
-
-                    @Override
-                    public void onError(Throwable e) {
-
-                    }
-                });
-    }
-
-    private Integer[] calculatePrimeNumbers(String str) {
-        String[] strings = str.split(",");
-        int count = strings.length;
-        int index = 0;
-        Integer[] results = new Integer[count];
-        for (int i = 2; i < 1000; i++) {
-            if ((i % 2) != 0 && (i % 3) != 0) {
-                results[index] = i;
-                index++;
-                if (index==count)
-                    break;
-            }
-        }
-        return results;
-    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -200,55 +138,55 @@ public class NewsListActivity extends BaseActivity
     @Override
     protected void onStart() {
         super.onStart();
-        EventBus.getDefault().register(this);
+        mPresenter.onStart();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        mPresenter.onResume();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        mPresenter.onPause();
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-        EventBus.getDefault().unregister(this);
+        mPresenter.onStop();
     }
 
     @Override
-    public void onTapComment() {
+    protected void onDestroy() {
+        super.onDestroy();
+        mPresenter.onDestory();
+    }
 
+//    @Subscribe(threadMode = ThreadMode.MAIN)
+//    public void onTapNewsEvent(TapNewsEvent event) {
+//        event.getNewsId();
+//        Intent intent = NewsDetailsActivity.newIntent(getApplicationContext());
+//        startActivity(intent);
+//    }
+
+    @Override
+    public void displayNewsList(List<NewsVO> newsVOList) {
+        mNewsAdapter.appendNewData(newsVOList);
     }
 
     @Override
-    public void onTapSendTo() {
-
+    public void displayErrorMsg(String errMessage) {
+        Snackbar.make(rvNews, errMessage, Snackbar.LENGTH_INDEFINITE).show();
     }
 
     @Override
-    public void onTapFavorite() {
-
-    }
-
-    @Override
-    public void onTapStatistics() {
-
-    }
-
-    @Override
-    public void onTapNews() {
-        Intent intent = NewsDetailsActivity.newIntent(getApplicationContext());
+    public void launchNewsDetailScreen(String newsId) {
+        Intent intent = NewsDetailsActivity.newIntent(getApplicationContext(), newsId);
         startActivity(intent);
     }
 
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onTapNewsEvent(TapNewsEvent event) {
-        event.getNewsId();
-        Intent intent = NewsDetailsActivity.newIntent(getApplicationContext());
-        startActivity(intent);
-    }
-
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onNewsDataLoaded(RestApiEvents.NewsDataLoadedEvent event) {
-    }
-
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onErrorInvokingAPI(RestApiEvents.ErrorInvokingAPIEvent event) {
-//        Snackbar.make(rvNews, event.getErrorMsg(), Snackbar.LENGTH_INDEFINITE).show();
-    }
 
 }
