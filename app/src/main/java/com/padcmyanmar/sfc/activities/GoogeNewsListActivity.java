@@ -41,8 +41,6 @@ public class GoogeNewsListActivity extends AppCompatActivity implements NewsList
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        mPresenter = new NewsListPresenter(this);
-        mPresenter.onCreate();
         rvNews.setEmptyView(vpEmptyNews);
         rvNews.setLayoutManager(new LinearLayoutManager(getApplicationContext(), LinearLayoutManager.VERTICAL, false));
         mNewsAdapter = new NewsAdapter(getApplicationContext(), mPresenter);
